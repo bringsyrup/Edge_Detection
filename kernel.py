@@ -5,14 +5,32 @@ For now, the kernel is hard-coded for edge-detection
 import numpy as np
 from PIL import Image
 
-fileName = 'lena.jpg'
+fileName = 'checkers.jpg'
 img = Image.open(fileName)
 img = img.convert('L')
 
-img.save('black_and_white_{0}'.format(fileName))
 
-imgArray = np.array(img, dtype = float)
-kernel = np.array([[-1, -1, -1],[-1, 8, -1],[-1, -1, -1]])
+# img.save('black_and_white_{0}'.format(fileName))
+
+imgArray = np.array(img, dtype = 'uint8')
+img2 = Image.fromarray(imgArray, 'L')
+img2.save('black_and_white_{0}'.format(fileName))
+
+
+# array1 = np.zeros((12,12))
+# array2 = np.ones((12,12))*255
+# array3 = np.zeros((12,12))
+# array4 = np.ones((12,12))*255
+
+# array5 = np.concatenate([array1, array2])
+# array6 = np.concatenate([array4, array3])
+# imgArray = np.concatenate([array5, array6], axis=1)
+# imgArray = imgArray.astype('uint8')
+# img = Image.fromarray(imgArray, 'L')
+# img.save('black_and_white_{0}'.format(fileName))
+
+kernel = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
+# kernel = np.array([[-1, -1, -1],[-1, 8, -1],[-1, -1, -1]])
 
 def convolve(imgArray, kernel):
     """colvolve the image matrix with the kernel"""
@@ -27,9 +45,22 @@ def convolve(imgArray, kernel):
                             kernel[1 + i, 1 + j])
     return convolvedArray
 
+
 convolvedArray = convolve(imgArray, kernel)
+avg = (np.amax(convolvedArray) + np.amin(convolvedArray))/2
+
+# newArray = np.ndarray(convolvedArray.shape)
 print convolvedArray
-newImg = Image.fromarray(convolvedArray, "L")
-newImg.show()
-#convolvedArray.save('convolved_{0}'.format(fileName))
+print avg
+for i in xrange(convolvedArray.shape[0]):
+  for j in xrange(convolvedArray.shape[1]): 
+    if convolvedArray[i][j] < avg:
+      convolvedArray[i][j] = 0
+    elif convolvedArray[i][j] >= avg:
+      convolvedArray[i][j] = 255
+
+print convolvedArray
+newImg = Image.fromarray(convolvedArray.astype('uint8'), "L")
+
+newImg.save('convolved_{0}'.format(fileName))
 
