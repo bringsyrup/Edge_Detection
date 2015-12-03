@@ -5,43 +5,83 @@ For now, the kernel is hard-coded for edge-detection
 import numpy as np
 from PIL import Image
 
-fileName = 'checkers.jpg'
-img = Image.open(fileName)
-img = img.convert('L')
+class EdgeDetection():
+    def __init__(self, fileName, kernel):
+        self.fileName = fileName
+        self.kernel = kernel
+        self.getImg()
+        array = self.convolve()
+        array = self.binarize(array)
+
+        newImg = Image.fromarray(array.astype('uint8'), "L")
+        newImg.save('edge_detected_{0}'.format(self.fileName))
+
+    def getImg(self):
+        self.img = Image.open(fileName)
+        self.img = self.img.convert('L')
+        self.imgArray = np.array(self.img, dtype = 'uint8')
+        self.shape = self.imgArray.shape
+
+    def _convolve(self, kernel):
+        """helper function to convolve images with 1d kernel"""
+        convolvedArray = np.zeros(self.shape)
+        kernalIterator = [-1, 0, 1]
+        for x in range(1, self.shape[0] - 1):
+            for y in range(1, self.shape[1] -1):
+                for i in kernalIterator:
+                    for j in kernalIterator:
+                        convolvedArray[x, y] +=  (self.imgArray[x + i, y + j]*
+                                kernel[1 + i, 1 + j])
+        return convolvedArray
+
+    def convolve(self):
+        """colvolve the image matrix with the kernel"""
+
+        if len(self.kernel.shape) == 2 or self.kernel.shape[0] == 1: 
+            convolvedArray = self._convolve(self.kernel)
+        elif self.kernel.shape[0] == 2:
+            kernelX = self.kernel[0]
+            kernelY = self.kernel[1]
+            convolvedArrayX = self._convolve(kernelX)
+            convolvedArrayY = self._convolve(kernelY)
+            convolvedArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
+        
+        return convolvedArray    
 
 
-img.save('black_and_white_{0}'.format(fileName))
 
-imgArray = np.array(img, dtype = 'uint8')
 
-kernel = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
+    def binarize(self, array):
+        """convert array into black and white image"""
+        avg = (np.amax(array) + np.amin(array))/2
+        for i in xrange(array.shape[0]):
+            for j in xrange(array.shape[1]): 
+                if array[i][j] < avg:
+                    array[i][j] = 0
+                elif array[i][j] >= avg:
+                    array[i][j] = 255
+        return array
+
 # kernel = np.array([[-1, -1, -1],[-1, 8, -1],[-1, -1, -1]])
 
-def convolve(imgArray, kernel):
-    """colvolve the image matrix with the kernel"""
-    shape = imgArray.shape
-    convolvedArray = np.zeros(shape)
-    kernalIterator = [-1, 0, 1]
-    for x in range(1, shape[0] - 1):
-        for y in range(1, shape[1] -1):
-            for i in kernalIterator:
-                for j in kernalIterator:
-                    convolvedArray[x, y] +=  (imgArray[x + i, y + j]*
-                            kernel[1 + i, 1 + j])
-    return convolvedArray
+identity = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
+edgeDetectA = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
+edgeDetectB = np.array([[-1, -1, -1],[-1, 8, -1],[-1, -1, -1]])
+edgeDetectC = np.array([[1, 0, -1],[0, 0, 0],[-1, 0, 1]])
+sobel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
+sharpen = np.array([[0, -1, 0],[-1, 5, -1],[0, -1, 0]])
+boxBlur = np.array([[1/9, 1/9, 1/9],[1/9, 1/9, 1/9],[1/9, 1/9, 1/9]])
+gauss = np.array([[1/16, 1/8, 1/16],[1/8, 1/4, 1/8],[1/16, 1/8, 1/16]])
 
 
-convolvedArray = convolve(imgArray, kernel)
-avg = (np.amax(convolvedArray) + np.amin(convolvedArray))/2
 
-for i in xrange(convolvedArray.shape[0]):
-  for j in xrange(convolvedArray.shape[1]): 
-    if convolvedArray[i][j] < avg:
-      convolvedArray[i][j] = 0
-    elif convolvedArray[i][j] >= avg:
-      convolvedArray[i][j] = 255
 
-newImg = Image.fromarray(convolvedArray.astype('uint8'), "L")
 
-newImg.save('convolved_{0}'.format(fileName))
 
+
+
+if __name__ == '__main__':
+    fileName = 'lena.jpg'
+    # kernel = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
+    kernel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
+    EdgeDetection(fileName, kernel)
