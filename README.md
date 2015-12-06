@@ -13,8 +13,7 @@ This module filters images according to the options below
 
 positional arguments:
   image       Choose an image file for processing. Currently tested filetypes include: .bmp, .png, .jpg
-  kernel
-                          Choose a kernel for filtering. Options are:
+  kernel      Choose a kernel for filtering. Options are:
                           identity - 3x3 kernel, does not change image
                           edgeA - 3x3 kernel, edge detection option A
                           edgeB - 3x3 kernel, edge detection option B
@@ -23,7 +22,6 @@ positional arguments:
                           sharpen - 3x3 kernel, sharpens image
                           boxBlur - 3x3 kernel, blur option A
                           gaussBlur - 3x3 kernel, blur option B
-
 
 optional arguments:
   -h, --help  show this help message and exit

@@ -87,8 +87,8 @@ def main():
             help = "Choose an image file for processing. Currently tested filetypes include: .bmp, .png, .jpg")
     parser.add_argument("kernel",
             type = str,
-            help = '''
-            Choose a kernel for filtering. Options are:
+            help = "Choose a kernel for filtering. Options are:" +
+            '''
             identity - 3x3 kernel, does not change image
             edgeA - 3x3 kernel, edge detection option A
             edgeB - 3x3 kernel, edge detection option B
@@ -96,8 +96,7 @@ def main():
             sobel - pair of 3x3 kernels, sobel edge detection
             sharpen - 3x3 kernel, sharpens image
             boxBlur - 3x3 kernel, blur option A
-            gaussBlur - 3x3 kernel, blur option B
-            '''
+            gaussBlur - 3x3 kernel, blur option B'''
             )
     args = parser.parse_args()
 
@@ -140,7 +139,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #fileName = 'lena.jpg'
-    # kernel = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
-    #kernel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
-    #EdgeDetection(fileName, kernel)
