@@ -1,7 +1,22 @@
 """
-This module takes an image and outputs the grey-scaled image convolved with a given kernel.
-For now, the kernel is hard-coded for edge-detection
+This module transforms a given image by a specified kernel or set of kernels.
+The module is self-contained and is controlled via a command-line interface.
+The goal is to apply any 3x3 kernel (including pairs of 3x3 kernels such as the sobel operator)
+as well as to apply artsy algorithms to an edge-detected image.
+
+Some ideas for "artsy filters":
+    - connect edges "correctly" and then change their shape (ex. make them zig-zag)
+    - turn edge pixels into a new shape (ex. pixel --> circle of pixels)
+    - connect edges to make enclosed spaces and color each space to create a new color image
+    - connect edges incorrectly to create impossible geometry (!!!!)
+        - maybe by first connecting them "correctly" and then swapping things out
+    - apply randomly generated rules for connecting edges
+    - apply specified rules for connecting/deleting edges 
+        - ex. only connect edges that are in the same horizontal stripe of specified width
+    - connect the edges "correctly" and then color the edges based on location
+
 """
+
 import numpy as np
 from PIL import Image
 
