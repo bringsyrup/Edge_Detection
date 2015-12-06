@@ -26,5 +26,5 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 
-$ python kernel "lena.jpg" "sobel"
+$ python kernel.py "lena.jpg" "sobel"
 ```
