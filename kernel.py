@@ -22,13 +22,13 @@ import numpy as np
 from PIL import Image
 
 class EdgeDetection():
-    def __init__(self, fileName, kernel):
+    def __init__(self, fileName, kernel, smooth):
         self.fileName = fileName
         self.kernel = kernel
         self.getImg()
-        array = self.convolve()
-        array = self.binarize(array)
-
+        array = self.convolve(smooth)
+        if smooth.any(): #if smooth is nonempty, we are using an edge detection kernel
+            array = self.binarize(array)
         newImg = Image.fromarray(array.astype('uint8'), "L")
         newImg.save('edge_detected_{0}'.format(self.fileName))
 
@@ -40,6 +40,7 @@ class EdgeDetection():
 
     def _convolve(self, kernel):
         """helper function to convolve images with 1d kernel"""
+        print "convolving"
         convolvedArray = np.zeros(self.shape)
         kernalIterator = [-1, 0, 1]
         for x in range(1, self.shape[0] - 1):
@@ -50,22 +51,23 @@ class EdgeDetection():
                                 kernel[1 + i, 1 + j])
         return convolvedArray
 
-    def convolve(self):
+    def convolve(self, smooth):
         """colvolve the image matrix with the kernel"""
-
+        if smooth.any(): #if smooth nonempty, we are using edge detection and must presmooth the image
+            print "smoothing in process"
+            convolvedArray = self._convolve(smooth)
         if len(self.kernel.shape) == 2 or self.kernel.shape[0] == 1: 
             convolvedArray = self._convolve(self.kernel)
         elif self.kernel.shape[0] == 2:
-            kernelX = self.kernel[0]
-            kernelY = self.kernel[1]
-            convolvedArrayX = self._convolve(kernelX)
-            convolvedArrayY = self._convolve(kernelY)
+            convolvedArrayX = self._convolve(self.kernel[0])
+            convolvedArrayY = self._convolve(self.kernel[1])
             convolvedArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
         
         return convolvedArray    
 
     def binarize(self, array):
         """convert array into black and white image"""
+        print "binarizing"
         avg = (np.amax(array) + np.amin(array))/2
         for i in xrange(array.shape[0]):
             for j in xrange(array.shape[1]): 
@@ -106,11 +108,14 @@ def main():
     edgeDetectC = np.array([[1, 0, -1],[0, 0, 0],[-1, 0, 1]])
     sobel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
     sharpen = np.array([[0, -1, 0],[-1, 5, -1],[0, -1, 0]])
-    boxBlur = np.array([[1/9, 1/9, 1/9],[1/9, 1/9, 1/9],[1/9, 1/9, 1/9]])
-    gaussBlur = np.array([[1/16, 1/8, 1/16],[1/8, 1/4, 1/8],[1/16, 1/8, 1/16]])
+    boxBlur = np.array([[1./9, 1./9, 1./9],[1./9, 1./9, 1./9],[1./9, 1./9, 1./9]])
+    gaussBlur = np.array([[1./16, 1./8, 1./16],[1./8, 1./4, 1./8],[1./16, 1./8, 1./16]])
+
+    smooth = gaussBlur
 
     if args.kernel == "identity":
         kernel = identity
+        smooth = np.array(None)
     elif args.kernel == "edgeA":
         kernel = edgeDetectA
     elif args.kernel == "edgeB":
@@ -121,17 +126,20 @@ def main():
         kernel = sobel
     elif args.kernel == "sharpen":
         kernel = sharpen
+        smooth = np.array(None)
     elif args.kernel == "boxBlur":
         kernel = boxBlur
+        smooth = np.array(None)
     elif args.kernel == "gaussBlur":
         kernel = gaussBlur
+        smooth = np.array(None)
     else:
         print "please choose an available kernel for filtering"
         return
 
     try:
         print "filtering in process"
-        EdgeDetection(args.image, kernel)
+        EdgeDetection(args.image, kernel, smooth)
     except IOError:
         print "please make sure the image file you are trying to filter exists"
 
