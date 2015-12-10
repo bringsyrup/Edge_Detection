@@ -56,7 +56,7 @@ class EdgeDetection():
         """colvolve the image matrix with the kernel"""
         if smooth.any(): #if smooth nonempty, we are using edge detection and must presmooth the image
             print "smoothing in process"
-            convolvedArray = self._convolve(smooth)
+            self.imgArray = self._convolve(smooth)
         if len(self.kernel.shape) == 2 or self.kernel.shape[0] == 1: 
             convolvedArray = self._convolve(self.kernel)
         elif self.kernel.shape[0] == 2:
@@ -149,7 +149,7 @@ def main():
     try:
         print "filtering in process"
         EdgeDetection(args.image, kernel, args.kernel, smooth)
-        
+
     except IOError:
         print "please make sure the image file you are trying to filter exists"
 
