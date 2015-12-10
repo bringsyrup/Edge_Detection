@@ -9,12 +9,13 @@ Some ideas for "artsy filters":
     - connect edges "correctly" and then change their shape (ex. make them zig-zag)
     - turn edge pixels into a new shape (ex. pixel --> circle of pixels)
     - connect edges to make enclosed spaces and color each space to create a new color image
+
     - connect edges incorrectly to create impossible geometry (!!!!)
         - maybe by first connecting them "correctly" and then swapping things out
     - apply randomly generated rules for connecting edges
     - apply specified rules for connecting/deleting edges 
         - ex. only connect edges that are in the same horizontal stripe of specified width
-    - connect the edges "correctly" and then color the edges based on location
+    - connect the edges "correctly" and then color the edges based on location or intenisty
 
 """
 
@@ -22,7 +23,7 @@ import numpy as np
 from PIL import Image
 
 class EdgeDetection():
-    def __init__(self, fileName, kernel):
+    def __init__(self, fileName, kernel, kernelName):
         self.fileName = fileName
         self.kernel = kernel
         self.getImg()
@@ -30,7 +31,7 @@ class EdgeDetection():
         array = self.binarize(array)
 
         newImg = Image.fromarray(array.astype('uint8'), "L")
-        newImg.save('edge_detected_{0}'.format(self.fileName))
+        newImg.save('{0}_{1}'.format(kernelName, self.fileName))
 
     def getImg(self):
         self.img = Image.open(self.fileName)
@@ -94,6 +95,8 @@ def main():
             edgeB - 3x3 kernel, edge detection option B
             edgeC - 3x3 kernel, edge detection option C
             sobel - pair of 3x3 kernels, sobel edge detection
+            prewitt - pair of 3x3 kernels, prewitt edge detection
+            sobel2 - pair of 3x3 kernels, sobel with 200 instead of 2 edge detection
             sharpen - 3x3 kernel, sharpens image
             boxBlur - 3x3 kernel, blur option A
             gaussBlur - 3x3 kernel, blur option B'''
@@ -105,6 +108,8 @@ def main():
     edgeDetectB = np.array([[-1, -1, -1],[-1, 8, -1],[-1, -1, -1]])
     edgeDetectC = np.array([[1, 0, -1],[0, 0, 0],[-1, 0, 1]])
     sobel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
+    sobel2 = np.array([[[1, 0, -1],[200, 0, -200],[1, 0, -1]], [[1, 200, 1],[0, 0, 0],[-1, -200, -1]]])
+    prewitt = np.array([[[1, 0, -1],[1, 0, -1],[1, 0, -1]], [[1, 1, 1],[0, 0, 0],[-1, -1, -1]]])
     sharpen = np.array([[0, -1, 0],[-1, 5, -1],[0, -1, 0]])
     boxBlur = np.array([[1/9, 1/9, 1/9],[1/9, 1/9, 1/9],[1/9, 1/9, 1/9]])
     gaussBlur = np.array([[1/16, 1/8, 1/16],[1/8, 1/4, 1/8],[1/16, 1/8, 1/16]])
@@ -118,7 +123,11 @@ def main():
     elif args.kernel == "edgeC":
         kernel = edgeDetectC
     elif args.kernel == "sobel":
-        kernel = sobel
+        kernel = sobel    
+    elif args.kernel == "prewitt":
+        kernel = sobel2    
+    elif args.kernel == "sobel2":
+        kernel = sobel2
     elif args.kernel == "sharpen":
         kernel = sharpen
     elif args.kernel == "boxBlur":
@@ -131,7 +140,7 @@ def main():
 
     try:
         print "filtering in process"
-        EdgeDetection(args.image, kernel)
+        EdgeDetection(args.image, kernel, args.kernel)
     except IOError:
         print "please make sure the image file you are trying to filter exists"
 
