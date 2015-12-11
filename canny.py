@@ -12,9 +12,17 @@ class EdgeDetection():
         self.getDirection()
         self.suppress()
         array = self.gradientArray
+        self.threshold(.1, .2)
+        self.link()
+        array = self.upperArray
+
         # array = self.binarize(array)
         newImg = Image.fromarray(array.astype('uint8'), "L")
-        newImg.save('canny_{0}'.format(self.fileName))
+        newImg.save("canny_{0}".format(self.fileName))
+        # newImg2 = Image.fromarray(self.upperArray.astype('uint8'), "L")
+        # newImg2.save("canny_upperThresh_{0}".format(self.fileName))        
+        # newImg3 = Image.fromarray(self.lowerArray.astype('uint8'), "L")
+        # newImg3.save("canny_lowerThresh_{0}".format(self.fileName))
 
     def getImg(self):
         self.img = Image.open(self.fileName)
@@ -26,11 +34,11 @@ class EdgeDetection():
         """helper function to convolve images with 1d kernel"""
         print "convolving"
         convolvedArray = np.zeros(self.shape)
-        kernalIterator = [-1, 0, 1]
+        kernelIterator = [-1, 0, 1]
         for x in range(1, self.shape[0] - 1):
             for y in range(1, self.shape[1] -1):
-                for i in kernalIterator:
-                    for j in kernalIterator:
+                for i in kernelIterator:
+                    for j in kernelIterator:
                         convolvedArray[x, y] +=  (self.imgArray[x + i, y + j]*
                                 kernel[1 + i, 1 + j])
         return convolvedArray
@@ -78,6 +86,40 @@ class EdgeDetection():
 
                 if self.gradientArray[x][y] <= max(neighbor1, neighbor2):
                     self.gradientArray[x][y] = 0
+
+    def threshold(self, lower, upper):
+        """
+            upper: percentage for upper threshold
+            lower: percentage for lower threshold
+        """
+        span = (np.amax(self.gradientArray) + np.amin(self.gradientArray))
+        upper = upper*span
+        lower = lower*span
+
+        self.upperArray = np.zeros(self.shape)
+        self.lowerArray = np.zeros(self.shape)
+
+        for x in range(self.shape[0]):
+            for y in range(self.shape[1]):
+                if self.gradientArray[x][y] >= upper:
+                    self.upperArray[x][y] = 255
+                if self.gradientArray[x][y] < upper:
+                    if  self.gradientArray[x][y] >= lower:
+                        self.lowerArray[x][y] = 255
+
+    def link(self):
+        def traverseEdges(x, y):
+            adjacentInd = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+            for i, j in adjacentInd:
+                if not self.upperArray[x + i][y + j]:
+                    if self.lowerArray[x + i][y + j]:
+                        self.upperArray[x + i][y + j] = 255
+                        traverseEdges(x + i, y + j)
+
+        for x in range(self.shape[0]):
+            for y in range(self.shape[1]):
+                if self.upperArray[x][y]:
+                    traverseEdges(x, y)
 
 
     def binarize(self, array):
