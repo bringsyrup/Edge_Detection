@@ -2,8 +2,7 @@
 """
 This module transforms a given image by a specified kernel or set of kernels.
 The module is self-contained and is controlled via a command-line interface.
-The goal is to apply any 3x3 kernel (including pairs of 3x3 kernels such as the sobel operator)
-as well as to apply artsy algorithms to an edge-detected image.
+The goal is to apply any 3x3 kernel (including pairs of 3x3 kernels such as the sobel operator).
 
 Some ideas for "artsy filters":
     - connect edges "correctly" and then change their shape (ex. make them zig-zag)
@@ -22,8 +21,20 @@ Some ideas for "artsy filters":
 import numpy as np
 from PIL import Image
 
-class EdgeDetection():
+class KernelFilter():
+    """
+    A class for filtering images with 3x3 kernels or a pair of 3x3 kernels. 
+    If a pair of 3x3 kernels is detected, the image is filtered according to the sobel kernel operator procedure.
+    """
     def __init__(self, fileName, kernel, kernelName, smooth):
+        '''
+        fileName -      the image filename as a string
+        kernel -        a 3x3 numpy array or a 2x3x3 numpy array (if the kernel is a pair of kernels)
+        kernelName -    string containing name of kernel used, for naming saved files appropriately
+        smooth -        A numpy array. If smooth is nonempty and contains a blur kernel (such as the gaussian
+                        blur kernel), it will be used to pre-filter the image, which is useful for edge detection
+        __init__() calls all necessary methods for filtering and then saves the filtered image.
+        '''
         self.fileName = fileName
         self.kernel = kernel
         self.getImg()
@@ -34,13 +45,18 @@ class EdgeDetection():
         newImg.save('{0}_{1}'.format(kernelName, self.fileName))
 
     def getImg(self):
+        '''
+        open the image specified by self.fileName, store it as a numpy array, and store it's shape. 
+        '''
         self.img = Image.open(self.fileName)
         self.img = self.img.convert('L')
         self.imgArray = np.array(self.img, dtype = 'uint8')
         self.shape = self.imgArray.shape
 
     def _convolve(self, kernel):
-        """helper function to convolve images with 1d kernel"""
+        """
+        helper function to convolve images with 3x3 kernel
+        """
         print "convolving"
         convolvedArray = np.zeros(self.shape)
         kernalIterator = [-1, 0, 1]
@@ -53,7 +69,10 @@ class EdgeDetection():
         return convolvedArray
 
     def convolve(self, smooth):
-        """colvolve the image matrix with the kernel"""
+        """
+        covolve the image matrix with the kernel. 
+        if a pair of kernels is detected, treat it according to sobel kernel operator procedure.
+        """
         if smooth.any(): #if smooth nonempty, we are using edge detection and must presmooth the image
             print "smoothing in process"
             self.imgArray = self._convolve(smooth)
@@ -62,12 +81,15 @@ class EdgeDetection():
         elif self.kernel.shape[0] == 2:
             convolvedArrayX = self._convolve(self.kernel[0])
             convolvedArrayY = self._convolve(self.kernel[1])
-            convolvedArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
+            convolvedArray = np.hypot(convolvedArrayX, convolvedArrayY)
         
         return convolvedArray    
 
     def binarize(self, array):
-        """convert array into black and white image"""
+        """
+        convert array into black and white image with a single threshold.
+        threshold value is currently hard-coded.
+        """
         print "binarizing"
         avg = .2*(np.amax(array) + np.amin(array))
         for i in xrange(array.shape[0]):
@@ -148,7 +170,7 @@ def main():
 
     try:
         print "filtering in process"
-        EdgeDetection(args.image, kernel, args.kernel, smooth)
+        KernelFilter(args.image, kernel, args.kernel, smooth)
 
     except IOError:
         print "please make sure the image file you are trying to filter exists"
