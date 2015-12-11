@@ -69,7 +69,7 @@ class EdgeDetection():
     def binarize(self, array):
         """convert array into black and white image"""
         print "binarizing"
-        avg = (np.amax(array) + np.amin(array))/2
+        avg = .2*(np.amax(array) + np.amin(array))
         for i in xrange(array.shape[0]):
             for j in xrange(array.shape[1]): 
                 if array[i][j] < avg:
