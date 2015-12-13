@@ -1,38 +1,73 @@
 #!/usr/bin/env python
 import numpy as np
 from PIL import Image
+from time import time
 
-class EdgeDetection():
-    def __init__(self, fileName):
-        self.kernel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
-        self.smooth = np.array([[1./16, 1./8, 1./16],[1./8, 1./4, 1./8],[1./16, 1./8, 1./16]])
+class Canny():
+    def __init__(self, fileName, thresholds=(.1, .2)):
+        '''
+        fileName -      name of image file
+        thresholds -    lower and upper thresholds contained in array or tuple. 
+                        both threshold values must be between 0 and 1.
+        
+        __init__ is used to run all necessary methods for edge detection, 
+        then saves the result to a new image file.
+        '''
+        self.kernel = np.array(
+                [
+                    [
+                        [1, 0, -1],
+                        [2, 0, -2],
+                        [1, 0, -1]], 
+                    [
+                        [1, 2, 1],
+                        [0, 0, 0],
+                        [-1, -2, -1]]
+                    ])
+        self.smooth = np.array(
+                [
+                    [1./16, 1./8, 1./16],
+                    [1./8, 1./4, 1./8],
+                    [1./16, 1./8, 1./16]
+                    ])
         self.fileName = fileName
+
+        self.startTime = time()
+
         self.getImg()
         self.convolve()
         self.getDirection()
         self.suppress()
         array = self.gradientArray
-        self.threshold(.1, .2)
+        self.threshold(thresholds)
         self.link()
         array = self.upperArray
-
-        # array = self.binarize(array)
         newImg = Image.fromarray(array.astype('uint8'), "L")
         newImg.save("canny_{0}".format(self.fileName))
         # newImg2 = Image.fromarray(self.upperArray.astype('uint8'), "L")
         # newImg2.save("canny_upperThresh_{0}".format(self.fileName))        
         # newImg3 = Image.fromarray(self.lowerArray.astype('uint8'), "L")
         # newImg3.save("canny_lowerThresh_{0}".format(self.fileName))
+        print "Total Time: ", time() - self.startTime
+        return
 
     def getImg(self):
+        '''
+        open image and convert to a numpy array
+        '''
         self.img = Image.open(self.fileName)
         self.img = self.img.convert('L')
         self.imgArray = np.array(self.img, dtype = 'uint8')
         self.shape = self.imgArray.shape
 
+        print "Got image. Execution Time: ", time() - self.startTime
+        self.time = time()
+        return
+
     def _convolve(self, kernel):
-        """helper function to convolve images with 1d kernel"""
-        print "convolving"
+        '''
+        helper function to convolve images with 3x3 kernel
+        '''
         convolvedArray = np.zeros(self.shape)
         kernelIterator = [-1, 0, 1]
         for x in range(1, self.shape[0] - 1):
@@ -41,18 +76,29 @@ class EdgeDetection():
                     for j in kernelIterator:
                         convolvedArray[x, y] +=  (self.imgArray[x + i, y + j]*
                                 kernel[1 + i, 1 + j])
+
+        print "Convolved. ET: ", time() - self.time
+        self.time = time()
         return convolvedArray
 
     def convolve(self):
-        """colvolve the image matrix with the kernel"""
+        '''
+        -smooth the image by convolution with gaussian kernel
+        -calculate the gradient of the image by convolution with sobel
+        -calculate the direction of the gradient
+        '''
         self.imgArray = self._convolve(self.smooth)
 
         convolvedArrayX = self._convolve(self.kernel[0])
         convolvedArrayY = self._convolve(self.kernel[1])
         self.gradientArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
         self.directionArray = np.arctan2(convolvedArrayY, convolvedArrayX)*180/np.pi
+        return
 
     def getDirection(self):
+        '''
+        round gradient direction to 0, 45, 90, or 135
+        '''
         for x in range(self.shape[0]):
             for y in range(self.shape[1]):
                 if (self.directionArray[x][y]<22.5 and self.directionArray[x][y]>=0) or \
@@ -68,7 +114,16 @@ class EdgeDetection():
                 else:
                     self.directionArray[x][y]=135
 
+        print "Rounded directions. ET: ", time() - self.time
+        self.time = time()
+        return
+
     def suppress(self):
+        '''
+        supress noise via the the following algorithm:
+            - for a pixel, look at it's neighbors in the direction indicated by the direction array
+            - if the pixel's value is less than that of either of the neighboring pixels, delete it
+        '''
         for x in range(1, self.shape[0] - 1):
             for y in range(1, self.shape[1] - 1):
                 if self.directionArray[x][y] == 0:
@@ -87,14 +142,21 @@ class EdgeDetection():
                 if self.gradientArray[x][y] <= max(neighbor1, neighbor2):
                     self.gradientArray[x][y] = 0
 
-    def threshold(self, lower, upper):
-        """
-            upper: percentage for upper threshold
-            lower: percentage for lower threshold
-        """
+        print "Supressed false edges. ET: ", time() - self.time
+        self.time = time()
+        return
+
+    def threshold(self, thresholds):
+        '''
+        thresholds - tuple pair or list pair containing upper and lower threshold decimals
+
+        the weak and strong edges are separated into two arrays. 
+        strong edges are those with values greater than the upper threshold
+        weak edges are those with values between the lower and upper threshold
+        '''
         span = (np.amax(self.gradientArray) + np.amin(self.gradientArray))
-        upper = upper*span
-        lower = lower*span
+        upper = np.amax(thresholds)*span
+        lower = np.amin(thresholds)*span
 
         self.upperArray = np.zeros(self.shape)
         self.lowerArray = np.zeros(self.shape)
@@ -107,32 +169,36 @@ class EdgeDetection():
                     if  self.gradientArray[x][y] >= lower:
                         self.lowerArray[x][y] = 255
 
+        print "Separated weak/strong edges. ET: ", time() - self.time
+        self.time = time()
+        return
+
     def link(self):
+        '''
+        if an edge pixel in the weak edge array is adjacent to a pixel in the strong edge array,
+        it is added to the strong edge array.
+        '''
         def traverseEdges(x, y):
+            '''
+            - check neighbors of a weak pixel to see if it's connected. 
+            - if it's connected, recurse on the newly found edge until it ends 
+            '''
             adjacentInd = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
             for i, j in adjacentInd:
                 if not self.upperArray[x + i][y + j]:
                     if self.lowerArray[x + i][y + j]:
                         self.upperArray[x + i][y + j] = 255
                         traverseEdges(x + i, y + j)
+            return
 
         for x in range(self.shape[0]):
             for y in range(self.shape[1]):
                 if self.upperArray[x][y]:
                     traverseEdges(x, y)
 
-
-    def binarize(self, array):
-        """convert array into black and white image"""
-        print "binarizing"
-        avg = (np.amax(array) + np.amin(array))/2
-        for i in xrange(array.shape[0]):
-            for j in xrange(array.shape[1]): 
-                if array[i][j] < avg:
-                    array[i][j] = 0
-                elif array[i][j] >= avg:
-                    array[i][j] = 255
-        return array
+        print "Added linked weak edges. ET: ", time() - self.time
+        self.time = time()
+        return
 
 
 def main():
@@ -143,17 +209,22 @@ def main():
             )
     parser.add_argument("image",
             type = str,
-            help = "Choose an image file for processing. Currently tested filetypes include: .bmp, .png, .jpg")
-    
+            help = '''            Choose an image file for processing. 
+            Currently tested filetypes include: .bmp, .png, .jpg'''
+            )
+    parser.add_argument("--thresholds", "-t",
+            nargs = "+",
+            type = float,
+            help = '''            Choose a lower and upper threshold between 0 and 1. Ex:
+            $ canny.py lena.jpg -t .1 .2'''
+            )
     args = parser.parse_args()
-
-
-
-
+    
     try:
-        print "filtering in process"
-        EdgeDetection(args.image)
-        
+        if args.thresholds:
+            Canny(args.image, args.thresholds)
+        else:
+            Canny(args.image)
     except IOError:
         print "please make sure the image file you are trying to filter exists"
 
