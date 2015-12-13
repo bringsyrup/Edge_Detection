@@ -39,10 +39,13 @@ class KernelFilter():
         self.kernel = kernel
         self.getImg()
         array = self.convolve(smooth)
+        blurred = ""
         if smooth.any(): #if smooth is nonempty, we are using an edge detection kernel
+            blurred = "Blur"
             array = self.binarize(array)
         newImg = Image.fromarray(array.astype('uint8'), "L")
-        newImg.save('{0}_{1}'.format(kernelName, self.fileName))
+        self.fileName = self.fileName.split('/')[1]
+        newImg.save('kernelImages/{0}{1}_{2}'.format(kernelName, blurred, self.fileName))
 
     def getImg(self):
         '''
@@ -132,7 +135,7 @@ def main():
     edgeDetectB = np.array([[-1, -1, -1],[-1, 8, -1],[-1, -1, -1]])
     edgeDetectC = np.array([[1, 0, -1],[0, 0, 0],[-1, 0, 1]])
     sobel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
-    sobel2 = np.array([[[1, 0, -1],[200, 0, -200],[1, 0, -1]], [[1, 200, 1],[0, 0, 0],[-1, -200, -1]]])
+    sobel2 = np.array([[[1, 0, -1],[300, 0, -300],[1, 0, -1]], [[1, 300, 1],[0, 0, 0],[-1, -300, -1]]])
     prewitt = np.array([[[1, 0, -1],[1, 0, -1],[1, 0, -1]], [[1, 1, 1],[0, 0, 0],[-1, -1, -1]]])
     sharpen = np.array([[0, -1, 0],[-1, 5, -1],[0, -1, 0]])
     boxBlur = np.array([[1./9, 1./9, 1./9],[1./9, 1./9, 1./9],[1./9, 1./9, 1./9]])
@@ -172,7 +175,8 @@ def main():
         print "filtering in process"
         KernelFilter(args.image, kernel, args.kernel, smooth)
 
-    except IOError:
+    except IOError, e:
+        print e
         print "please make sure the image file you are trying to filter exists"
 
     return

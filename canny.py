@@ -41,14 +41,14 @@ class Canny():
         array = self.gradientArray
         self.threshold(thresholds)
         self.link()
-        array = self.upperArray
-        newImg = Image.fromarray(array.astype('uint8'), "L")
-        newImg.save("canny_{0}".format(self.fileName))
-        # newImg2 = Image.fromarray(self.upperArray.astype('uint8'), "L")
-        # newImg2.save("canny_upperThresh_{0}".format(self.fileName))        
-        # newImg3 = Image.fromarray(self.lowerArray.astype('uint8'), "L")
-        # newImg3.save("canny_lowerThresh_{0}".format(self.fileName))
-        print "Total Time: ", time() - self.startTime
+
+        arrayToSave = self.convolvedArrayY
+        self.modifier = "yOnly"
+        self.fileName = self.fileName.split('/')[-1]
+
+        newImg = Image.fromarray(arrayToSave.astype('uint8'), "L")
+        newImg.save("cannyImages/{0}_{1}".format(self.modifier, self.fileName))
+        print "Total time: ", time() - self.startTime
         return
 
     def getImg(self):
@@ -89,11 +89,18 @@ class Canny():
         '''
         self.imgArray = self._convolve(self.smooth)
 
+<<<<<<< HEAD
         convolvedArrayX = self._convolve(self.kernel[0])
         convolvedArrayY = self._convolve(self.kernel[1])
         self.gradientArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
         self.directionArray = np.arctan2(convolvedArrayY, convolvedArrayX)*180/np.pi
         return
+=======
+        self.convolvedArrayX = self._convolve(self.kernel[0])
+        self.convolvedArrayY = self._convolve(self.kernel[1])
+        self.gradientArray = np.sqrt(self.convolvedArrayX**2 + self.convolvedArrayY**2)
+        self.directionArray = np.arctan2(self.convolvedArrayY, self.convolvedArrayX)*180/np.pi
+>>>>>>> e6e9a8b84dc8528c653178759361aa9097d49b12
 
     def getDirection(self):
         '''
@@ -196,9 +203,12 @@ class Canny():
                 if self.upperArray[x][y]:
                     traverseEdges(x, y)
 
+<<<<<<< HEAD
         print "Added linked weak edges. ET: ", time() - self.time
         self.time = time()
         return
+=======
+>>>>>>> e6e9a8b84dc8528c653178759361aa9097d49b12
 
 
 def main():
