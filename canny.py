@@ -4,6 +4,7 @@ from PIL import Image
 
 class EdgeDetection():
     def __init__(self, fileName):
+        # self.kernel = np.array([[[1, 0, -1],[300, 0, -300],[1, 0, -1]], [[1, 300, 1],[0, 0, 0],[-1, -300, -1]]])
         self.kernel = np.array([[[1, 0, -1],[2, 0, -2],[1, 0, -1]], [[1, 2, 1],[0, 0, 0],[-1, -2, -1]]])
         self.smooth = np.array([[1./16, 1./8, 1./16],[1./8, 1./4, 1./8],[1./16, 1./8, 1./16]])
         self.fileName = fileName
@@ -14,15 +15,13 @@ class EdgeDetection():
         array = self.gradientArray
         self.threshold(.1, .2)
         self.link()
-        array = self.upperArray
 
-        # array = self.binarize(array)
-        newImg = Image.fromarray(array.astype('uint8'), "L")
-        newImg.save("canny_{0}".format(self.fileName))
-        # newImg2 = Image.fromarray(self.upperArray.astype('uint8'), "L")
-        # newImg2.save("canny_upperThresh_{0}".format(self.fileName))        
-        # newImg3 = Image.fromarray(self.lowerArray.astype('uint8'), "L")
-        # newImg3.save("canny_lowerThresh_{0}".format(self.fileName))
+        arrayToSave = self.convolvedArrayY
+        self.modifier = "yOnly"
+        self.fileName = self.fileName.split('/')[-1]
+
+        newImg = Image.fromarray(arrayToSave.astype('uint8'), "L")
+        newImg.save("cannyImages/{0}_{1}".format(self.modifier, self.fileName))
 
     def getImg(self):
         self.img = Image.open(self.fileName)
@@ -47,10 +46,10 @@ class EdgeDetection():
         """colvolve the image matrix with the kernel"""
         self.imgArray = self._convolve(self.smooth)
 
-        convolvedArrayX = self._convolve(self.kernel[0])
-        convolvedArrayY = self._convolve(self.kernel[1])
-        self.gradientArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
-        self.directionArray = np.arctan2(convolvedArrayY, convolvedArrayX)*180/np.pi
+        self.convolvedArrayX = self._convolve(self.kernel[0])
+        self.convolvedArrayY = self._convolve(self.kernel[1])
+        self.gradientArray = np.sqrt(self.convolvedArrayX**2 + self.convolvedArrayY**2)
+        self.directionArray = np.arctan2(self.convolvedArrayY, self.convolvedArrayX)*180/np.pi
 
     def getDirection(self):
         for x in range(self.shape[0]):
@@ -121,18 +120,6 @@ class EdgeDetection():
                 if self.upperArray[x][y]:
                     traverseEdges(x, y)
 
-
-    def binarize(self, array):
-        """convert array into black and white image"""
-        print "binarizing"
-        avg = (np.amax(array) + np.amin(array))/2
-        for i in xrange(array.shape[0]):
-            for j in xrange(array.shape[1]): 
-                if array[i][j] < avg:
-                    array[i][j] = 0
-                elif array[i][j] >= avg:
-                    array[i][j] = 255
-        return array
 
 
 def main():
