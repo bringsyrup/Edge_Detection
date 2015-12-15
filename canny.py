@@ -34,20 +34,42 @@ class Canny():
 
         self.startTime = time()
 
+        '''get the image'''
         self.getImg()
+
+        '''convolve image with sobel kernels and save as images'''
         self.convolve()
+        yGradient = self.convolvedArrayY
+        Image.fromarray(yGradient.astype('uint8'), "L").save("cannyImages/canny_yGradient_{0}".format(self.fileName))
+        xGradient = self.convolvedArrayX
+        Image.fromarray(xGradient.astype('uint8'), "L").save("cannyImages/canny_xGradient_{0}".format(self.fileName))
+        gradient = self.gradientArray
+        Image.fromarray(gradient.astype('uint8'), "L").save("cannyImages/canny_gradient_{0}".format(self.fileName))
+        direction = self.directionArray
+        Image.fromarray(direction.astype('uint8'), "L").save("cannyImages/canny_direction_{0}".format(self.fileName))
+
+        '''round the direction of the gradient to 0, 45, 90, or 135 degrees and save as image'''
         self.getDirection()
+        roundedDirection = self.directionArray
+        Image.fromarray(roundedDirection.astype('uint8'), "L").save("cannyImages/canny_roundedDirection_{0}".format(self.fileName))
+
+        '''supress false edges and save as image'''
         self.suppress()
-        array = self.gradientArray
+        suppressedGradient = self.gradientArray
+        Image.fromarray(suppressedGradient.astype('uint8'), "L").save("cannyImages/canny_suppressedGradient_{0}".format(self.fileName))
+
+        '''separate weak and strong edges with threshold values and save as images'''
         self.threshold(thresholds)
+        strongEdges = self.upperArray
+        Image.fromarray(strongEdges.astype('uint8'), "L").save("cannyImages/canny_strongEdges_{0}".format(self.fileName))
+        weakEdges = self.lowerArray
+        Image.fromarray(weakEdges.astype('uint8'), "L").save("cannyImages/canny_weakEdges_{0}".format(self.fileName))
+
+        '''add weak edges is they are linked to strong edges and save final edge detected image'''
         self.link()
+        final = self.upperArray
+        Image.fromarray(final.astype('uint8'), "L").save("cannyImages/canny_finalEdges_{0}".format(self.fileName))
 
-        arrayToSave = self.convolvedArrayY
-        self.modifier = "yOnly"
-        self.fileName = self.fileName.split('/')[-1]
-
-        newImg = Image.fromarray(arrayToSave.astype('uint8'), "L")
-        newImg.save("cannyImages/{0}_{1}".format(self.modifier, self.fileName))
         print "Total time: ", time() - self.startTime
         return
 
@@ -220,13 +242,10 @@ def main():
             )
     args = parser.parse_args()
     
-    try:
-        if args.thresholds:
-            Canny(args.image, args.thresholds)
-        else:
-            Canny(args.image)
-    except IOError:
-        print "please make sure the image file you are trying to filter exists"
+    if args.thresholds:
+        Canny(args.image, args.thresholds)
+    else:
+        Canny(args.image)
 
     return
 
