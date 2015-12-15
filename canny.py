@@ -89,18 +89,11 @@ class Canny():
         '''
         self.imgArray = self._convolve(self.smooth)
 
-<<<<<<< HEAD
-        convolvedArrayX = self._convolve(self.kernel[0])
-        convolvedArrayY = self._convolve(self.kernel[1])
-        self.gradientArray = np.sqrt(convolvedArrayX**2 + convolvedArrayY**2)
-        self.directionArray = np.arctan2(convolvedArrayY, convolvedArrayX)*180/np.pi
-        return
-=======
         self.convolvedArrayX = self._convolve(self.kernel[0])
         self.convolvedArrayY = self._convolve(self.kernel[1])
         self.gradientArray = np.sqrt(self.convolvedArrayX**2 + self.convolvedArrayY**2)
         self.directionArray = np.arctan2(self.convolvedArrayY, self.convolvedArrayX)*180/np.pi
->>>>>>> e6e9a8b84dc8528c653178759361aa9097d49b12
+        return
 
     def getDirection(self):
         '''
@@ -203,12 +196,9 @@ class Canny():
                 if self.upperArray[x][y]:
                     traverseEdges(x, y)
 
-<<<<<<< HEAD
         print "Added linked weak edges. ET: ", time() - self.time
         self.time = time()
         return
-=======
->>>>>>> e6e9a8b84dc8528c653178759361aa9097d49b12
 
 
 def main():
